@@ -2,6 +2,7 @@ package com.innovez.service;
 
 import java.util.Date;
 
+import com.innovez.entity.Account;
 import com.innovez.entity.Money;
 
 /**
@@ -13,6 +14,11 @@ import com.innovez.entity.Money;
 public interface TransferService {
 	TransferStatus transfer(String fromAccountNumber, String toAccountNumber, Money amount) throws TransferException;
 	
+	/**
+	 * Dto for reposrting transfer status.
+	 * 
+	 * @author zakyalvan
+	 */
 	public static interface TransferStatus {
 		String getFromAccountNumber();
 		String getFromAccountOwner();
@@ -24,7 +30,12 @@ public interface TransferService {
 		Date getCompletedDate();
 	}
 	
-	public static interface ServiceFeePolicy {
-		
+	/**
+	 * Strategy object to enforce transfer service fee policy.
+	 * 
+	 * @author zakyalvan
+	 */
+	public static interface TransferFeePolicy {
+		Money calculateFee(Account fromAccount, Account account, Money transfered);
 	}
 }

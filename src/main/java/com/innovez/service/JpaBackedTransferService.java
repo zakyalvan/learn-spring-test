@@ -2,6 +2,7 @@ package com.innovez.service;
 
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +23,9 @@ public class JpaBackedTransferService implements TransferService {
 	private Logger logger = Logger.getLogger(JpaBackedTransferService.class);
 	
 	private AccountRepository accountRepository;
+	
+	private TransferFeePolicy idrTransferFeePolicy;
+	private TransferFeePolicy sgdTransferFeePolicy;
 	
 	/**
 	 * Currently, no check for currency.
@@ -49,14 +53,17 @@ public class JpaBackedTransferService implements TransferService {
 			throw new TransferException.SuspendedAccountUsedException("Suspended account.");
 		}
 		
-		logger.debug("Check whether has sufficient balance to transfer.");
+		logger.debug("Check whether source account has sufficient balance to transfer.");
 		/**
 		 * TODO  We shall refactor this, add custom query method on repository 
 		 * to check whether fromAccount have sufficient account, instead of check manually like this.
 		 * Remember tell-don't-ask (TDA) principle.
 		 */
+		TransferFeePolicy transferFeePolicy = idrTransferFeePolicy;
+		Double minimalRequiredBalanceAmount = amount.getAmount() + transferFeePolicy.calculateFee(fromAccount, toAccount, amount).getAmount();
+		
 		// Checking double-precision object like this is not safe. This for simplicity purpose.
-		if(fromAccount.getBalance().getAmount() <= amount.getAmount()) {
+		if(fromAccount.getBalance().getAmount() <= minimalRequiredBalanceAmount) {
 			throw new TransferException.UnsufficientBalanceException("Unsufficient account balance.");
 		}
 		
@@ -73,5 +80,13 @@ public class JpaBackedTransferService implements TransferService {
 	@Autowired
 	public void setAccountRepository(AccountRepository accountRepository) {
 		this.accountRepository = accountRepository;
+	}
+	@Autowired
+	public void setIdrTransferFeePolicy(@Qualifier("IDR") TransferFeePolicy transferFeePolicy) {
+		this.idrTransferFeePolicy = transferFeePolicy;
+	}
+	@Autowired
+	public void setSgdTransferFeePolicy(@Qualifier("SGD") TransferFeePolicy transferFeePolicy) {
+		this.sgdTransferFeePolicy = transferFeePolicy;
 	}
 }
