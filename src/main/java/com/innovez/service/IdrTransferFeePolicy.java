@@ -7,7 +7,7 @@ import com.innovez.entity.Account;
 import com.innovez.entity.Money;
 import com.innovez.service.TransferService.TransferFeePolicy;
 
-@Component
+@Component("IDR")
 @Qualifier("IDR")
 public class IdrTransferFeePolicy implements TransferFeePolicy {
 	@Override

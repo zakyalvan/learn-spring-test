@@ -20,9 +20,7 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Version;
-import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
 
 @Entity
 @Table(name="innvz_account")
@@ -45,8 +43,6 @@ public class Account {
 	@Column(name="account_status")
 	private Status status;
 	
-	@Valid
-	@Size(min=1)
 	@OrderBy(value="timestamp")
 	@ElementCollection(fetch=FetchType.LAZY)
 	private List<BalanceHistory> histories = new ArrayList<Account.BalanceHistory>();

@@ -1,5 +1,7 @@
 package com.innovez.service;
 
+import java.util.Map;
+
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -24,8 +26,7 @@ public class JpaBackedTransferService implements TransferService {
 	
 	private AccountRepository accountRepository;
 	
-	private TransferFeePolicy idrTransferFeePolicy;
-	private TransferFeePolicy sgdTransferFeePolicy;
+	private Map<String, TransferFeePolicy> transferFeePoliciesMap;
 	
 	/**
 	 * Currently, no check for currency.
@@ -59,7 +60,7 @@ public class JpaBackedTransferService implements TransferService {
 		 * to check whether fromAccount have sufficient account, instead of check manually like this.
 		 * Remember tell-don't-ask (TDA) principle.
 		 */
-		TransferFeePolicy transferFeePolicy = idrTransferFeePolicy;
+		TransferFeePolicy transferFeePolicy = transferFeePoliciesMap.get("IDR");
 		Double minimalRequiredBalanceAmount = amount.getAmount() + transferFeePolicy.calculateFee(fromAccount, toAccount, amount).getAmount();
 		
 		// Checking double-precision object like this is not safe. This for simplicity purpose.
@@ -81,12 +82,10 @@ public class JpaBackedTransferService implements TransferService {
 	public void setAccountRepository(AccountRepository accountRepository) {
 		this.accountRepository = accountRepository;
 	}
+
 	@Autowired
-	public void setIdrTransferFeePolicy(@Qualifier("IDR") TransferFeePolicy transferFeePolicy) {
-		this.idrTransferFeePolicy = transferFeePolicy;
+	public void setTransferFeePoliciesMap(Map<String, TransferFeePolicy> transferFeePoliciesMap) {
+		this.transferFeePoliciesMap = transferFeePoliciesMap;
 	}
-	@Autowired
-	public void setSgdTransferFeePolicy(@Qualifier("SGD") TransferFeePolicy transferFeePolicy) {
-		this.sgdTransferFeePolicy = transferFeePolicy;
-	}
+	
 }
