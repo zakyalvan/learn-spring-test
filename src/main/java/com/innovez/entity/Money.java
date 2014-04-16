@@ -5,6 +5,8 @@ import javax.persistence.Embeddable;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 
+import org.springframework.util.Assert;
+
 @Embeddable
 public class Money {
 	@NotNull
@@ -34,10 +36,19 @@ public class Money {
 	void setAmount(Double amount) {
 		this.amount = amount;
 	}
-	public void increaseAmount(Double amountToAdd) {
-		this.amount += amountToAdd;
+	
+	public Money add(Money money) {
+		Assert.isTrue(currencyCode.equalsIgnoreCase(money.getCurrencyCode()), "Can't add money with different currency.");
+		Assert.isTrue(money.getAmount() > 0, "Added money amount should should greater than zero.");
+		
+		this.amount += money.getAmount();
+		return this;
 	}
-	public void decreaseAmount(Double amountTuSub) {
-		this.amount -= amountTuSub;
+	public Money substract(Money money) {
+		Assert.isTrue(currencyCode.equalsIgnoreCase(money.getCurrencyCode()), "Can't substract money with different currency.");
+		Assert.isTrue(money.getAmount() > 0, "Substracted money amount should should greater than zero.");
+		
+		this.amount -= money.getAmount();
+		return this;
 	}
 }

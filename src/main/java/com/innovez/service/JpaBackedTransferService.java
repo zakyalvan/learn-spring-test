@@ -4,7 +4,6 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,6 +12,8 @@ import com.innovez.entity.Account;
 import com.innovez.entity.Account.Status;
 import com.innovez.entity.Money;
 import com.innovez.repo.AccountRepository;
+import com.innovez.service.dto.TransferCommand;
+import com.innovez.service.policy.TransferFeePolicy;
 
 /**
  * Default implementation of {@link TransferService}
@@ -28,54 +29,60 @@ public class JpaBackedTransferService implements TransferService {
 	
 	private Map<String, TransferFeePolicy> transferFeePoliciesMap;
 	
+	@Override
+	@Transactional(readOnly=true)
+	public TransferStatus checkTransfer(String fromAccountNumber, String toAccountNumber, Money transferingAmount) {
+		return null;
+	}
+
 	/**
 	 * Currently, no check for currency.
 	 */
 	@Override
 	@Transactional(propagation=Propagation.REQUIRED)
-	public TransferStatus transfer(String fromAccountNumber, String toAccountNumber, Money amount) throws TransferException {
+	public TransferStatus transfer(TransferCommand command) throws TransferException {
 		logger.debug("Perform transfer.");
-		if(!(accountRepository.exists(fromAccountNumber) && accountRepository.exists(toAccountNumber))) {
+		if(!(accountRepository.exists(command.getSourceAccount()) && accountRepository.exists(command.getTargetAccount()))) {
 			throw new TransferException.UnregisteredAccountException("Unregistered account used on tranfer");
 		}
 		
-		Account fromAccount = accountRepository.findOne(fromAccountNumber);
-		Account toAccount = accountRepository.findOne(toAccountNumber);
+		Account sourceAccount = accountRepository.findOne(command.getSourceAccount());
+		Account targetAccount = accountRepository.findOne(command.getTargetAccount());
 		
 		logger.debug("Check whether accounts suspended.");
 		/**
-		 * TODO We shall refactor this, add custom query method on repository 
+		 * TODO We shall re-factor this, add custom query method on repository 
 		 * to check whether fromAccount and toAccount is'n in SUSPENDED state, instead of check manually like this.
 		 * Remember tell-don't-ask (TDA) principle.
 		 * 
 		 * Also we can simply use the query method in, for example, validator class.
 		 */
-		if(fromAccount.getStatus() == Status.SUSPENDED || toAccount.getStatus() == Status.SUSPENDED) {
+		if(sourceAccount.getStatus() == Status.SUSPENDED || targetAccount.getStatus() == Status.SUSPENDED) {
 			throw new TransferException.SuspendedAccountUsedException("Suspended account.");
 		}
 		
 		logger.debug("Check whether source account has sufficient balance to transfer.");
 		/**
-		 * TODO  We shall refactor this, add custom query method on repository 
+		 * TODO  We shall re-factor this, add custom query method on repository 
 		 * to check whether fromAccount have sufficient account, instead of check manually like this.
 		 * Remember tell-don't-ask (TDA) principle.
 		 */
 		TransferFeePolicy transferFeePolicy = transferFeePoliciesMap.get("IDR");
-		Double minimalRequiredBalanceAmount = amount.getAmount() + transferFeePolicy.calculateFee(fromAccount, toAccount, amount).getAmount();
+		Double minimalRequiredBalanceAmount = command.getTransferAmount().getAmount() + transferFeePolicy.calculateFee(command).getAmount();
 		
 		// Checking double-precision object like this is not safe. This for simplicity purpose.
-		if(fromAccount.getBalance().getAmount() <= minimalRequiredBalanceAmount) {
+		if(sourceAccount.getBalance().getAmount() <= minimalRequiredBalanceAmount) {
 			throw new TransferException.UnsufficientBalanceException("Unsufficient account balance.");
 		}
 		
 		// Now, we have no problems to transfer the money.
-		fromAccount.getBalance().decreaseAmount(amount.getAmount());
-		toAccount.getBalance().increaseAmount(amount.getAmount());
+		sourceAccount.getBalance().substract(command.getTransferAmount()).substract(transferFeePolicy.calculateFee(command));
+		targetAccount.getBalance().add(command.getTransferAmount());
 		
-		fromAccount = accountRepository.save(fromAccount);
-		toAccount = accountRepository.save(toAccount);
+		sourceAccount = accountRepository.save(sourceAccount);
+		targetAccount = accountRepository.save(targetAccount);
 		
-		return new SimpleTransferStatus(fromAccount.getNumber(), fromAccount.getOwner().getName(), toAccount.getNumber(), toAccount.getOwner().getName(), amount);
+		return new SimpleTransferStatus(sourceAccount.getNumber(), sourceAccount.getOwner().getName(), targetAccount.getNumber(), targetAccount.getOwner().getName(), command.getTransferAmount());
 	}
 
 	@Autowired

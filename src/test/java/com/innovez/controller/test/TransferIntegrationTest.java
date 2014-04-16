@@ -2,24 +2,24 @@ package com.innovez.controller.test;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.util.Arrays;
 import java.util.Date;
+
+import javax.annotation.PostConstruct;
 
 import org.apache.log4j.Logger;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.repository.CrudRepository;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.ContextHierarchy;
 import org.springframework.test.context.TestContext;
 import org.springframework.test.context.TestContextManager;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.transaction.TransactionConfiguration;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -46,6 +46,7 @@ import com.innovez.repo.PersonRepository;
 	@ContextConfiguration(locations={"classpath:/META-INF/spring/webapp/webapp-context.xml"})
 })
 @WebAppConfiguration(value="/src/main/webapp")
+@TransactionConfiguration(defaultRollback=true)
 public class TransferIntegrationTest {
 	private Logger logger = Logger.getLogger(TransferIntegrationTest.class);
 	
@@ -63,12 +64,9 @@ public class TransferIntegrationTest {
 	
 	private MockMvc mockMvc;
 	
-	@Before
+	@PostConstruct
 	@Transactional(propagation=Propagation.REQUIRED)
-	public void setup() {
-		logger.debug("Setup integration test, first setup MockMvc object.");
-		mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
-		
+	public void populateData() {
 		logger.debug("Bootstrap test account data, of course with their owner.");
 		Person zaky = new Person();
 		zaky.setEmail("zaky@example.com");
@@ -106,12 +104,18 @@ public class TransferIntegrationTest {
 		accountRepository.save(radhySuspendedAccount);
 	}
 	
+	@Before
+	public void setup() {
+		logger.debug("!===========================! Setup integration test, first setup MockMvc object.");
+		mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+	}
+	
 	@Test
 	public void testTransferMoneyOnHappyDay() throws Exception {
 		logger.debug("Happy day test!");
 		mockMvc.perform(
 			post("/transfers")
-				.accept("text/html")
+				.accept(MediaType.ALL)
 				.contentType(MediaType.APPLICATION_FORM_URLENCODED)
 				.param("fromAccount", FIRST_ACCOUNT_NUMBER)
 				.param("toAccount", SECOND_ACCOUNT_NUMBER)
@@ -119,7 +123,24 @@ public class TransferIntegrationTest {
 				.param("amount", "30000")
 			)
 			.andExpect(status().isOk())
-			.andExpect(content().contentType("text/html"))
+			//.andExpect(content().contentType(MediaType.ALL_VALUE))
+			.andDo(print());
+	}
+	
+	@Test
+	public void testTransferMoneyToUnregisteredAccount() throws Exception {
+		logger.debug("Transfer money to unregistered account");
+		mockMvc.perform(
+			post("/transfers")
+				.accept(MediaType.ALL)
+				.contentType(MediaType.APPLICATION_FORM_URLENCODED)
+				.param("fromAccount", FIRST_ACCOUNT_NUMBER)
+				.param("toAccount", new Long(new Date().getTime() + 1024).toString())
+				.param("currency", "IDR")
+				.param("amount", "30000")
+			)
+			.andExpect(status().isOk())
+			//.andExpect(content().contentType(MediaType.ALL_VALUE))
 			.andDo(print());
 	}
 }

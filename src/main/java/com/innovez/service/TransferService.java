@@ -4,6 +4,7 @@ import java.util.Date;
 
 import com.innovez.entity.Account;
 import com.innovez.entity.Money;
+import com.innovez.service.dto.TransferCommand;
 
 /**
  * Contract for money transfer service.
@@ -13,6 +14,13 @@ import com.innovez.entity.Money;
  */
 public interface TransferService {
 	/**
+	 * Check whether we can transfer money with given parameter.
+	 * 
+	 * @return
+	 */
+	TransferStatus checkTransfer(String fromAccountNumber, String toAccountNumber, Money transferingAmount);
+	
+	/**
 	 * Do transfering money.
 	 * 
 	 * @param fromAccountNumber
@@ -21,7 +29,7 @@ public interface TransferService {
 	 * @return
 	 * @throws TransferException
 	 */
-	TransferStatus transfer(String fromAccountNumber, String toAccountNumber, Money amount) throws TransferException;
+	TransferStatus transfer(TransferCommand command) throws TransferException;
 	
 	/**
 	 * Dto for reposrting transfer status.
@@ -37,14 +45,5 @@ public interface TransferService {
 		Money getTransferAmount();
 		
 		Date getCompletedDate();
-	}
-	
-	/**
-	 * Strategy object to enforce transfer service fee policy.
-	 * 
-	 * @author zakyalvan
-	 */
-	public static interface TransferFeePolicy {
-		Money calculateFee(Account fromAccount, Account account, Money transfered);
 	}
 }

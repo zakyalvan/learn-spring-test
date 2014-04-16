@@ -1,15 +1,14 @@
 package com.innovez.controller;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.test.context.TestExecutionListener;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -22,20 +21,23 @@ import com.innovez.entity.Money;
 import com.innovez.service.TransferException;
 import com.innovez.service.TransferService;
 import com.innovez.service.TransferService.TransferStatus;
+import com.innovez.service.dto.TransferCommand;
 
 /**
- * Controller for handling user's transfer request from browser.
+ * Controller for handling money transfer, from one account to another account.
  * 
  * @author zakyalvan
  */
 @Controller
 @RequestMapping(value="/transfers")
-public class TransferController {
-	private Logger logger = Logger.getLogger(TransferController.class);
+public class MoneyTransferController {
+	private Logger logger = Logger.getLogger(MoneyTransferController.class);
 	
+	/**
+	 * Transfer service.
+	 */
 	private TransferService transferService;
 	
-	TestExecutionListener test;
 	/**
 	 * Attach form backing object or command to model.
 	 * 
@@ -59,9 +61,12 @@ public class TransferController {
 	}
 	
 	@RequestMapping(method=RequestMethod.POST)
-	public @ResponseBody TransferStatus processTransfer(@ModelAttribute TransferForm form, BindingResult bindingResult) {
+	public @ResponseBody TransferStatus processTransfer(@Valid @ModelAttribute TransferForm form, BindingResult bindingResult) {
 		logger.debug("Perform transfer with form/command : " + form);
-		return transferService.transfer(form.getFromAccount(), form.getToAccount(), new Money(form.getCurrency(), form.getAmount()));
+		if(bindingResult.hasErrors()) {
+			return null;
+		}
+		return transferService.transfer(form);
 	}
 	
 	@ExceptionHandler(TransferException.class)
@@ -78,30 +83,38 @@ public class TransferController {
 	 * Form backing object or command for tranfer request.
 	 */
 	@SuppressWarnings("serial")
-	public static class TransferForm implements Serializable {
+	public static class TransferForm implements TransferCommand {
 		@NotNull
-		public String fromAccount;
+		private String sourceAccount;
 		@NotNull
-		public String toAccount;
+		private String targetAccount;
 		@NotNull
-		public String currency;
+		private String currency;
 		@NotNull
-		public Double amount;
+		private Double amount;
+		@NotNull
+		private final Source source = Source.INTERNET;
 		
-		public String getFromAccount() {
-			return fromAccount;
+		@Override
+		public String getSourceAccount() {
+			return sourceAccount;
 		}
-		public void setFromAccount(String fromAccount) {
-			this.fromAccount = fromAccount;
+		public void setSourceAccount(String sourceAccount) {
+			this.sourceAccount = sourceAccount;
 		}
-		
-		public String getToAccount() {
-			return toAccount;
+
+		@Override
+		public String getTargetAccount() {
+			return targetAccount;
 		}
-		public void setToAccount(String toAccount) {
-			this.toAccount = toAccount;
+		public void setTargetAccount(String targetAccount) {
+			this.targetAccount = targetAccount;
 		}
-		
+
+		@Override
+		public Money getTransferAmount() {
+			return new Money(currency, amount);
+		}
 		
 		public String getCurrency() {
 			return currency;
@@ -116,12 +129,16 @@ public class TransferController {
 		public void setAmount(Double amount) {
 			this.amount = amount;
 		}
-		
+		@Override
+		public Source getSource() {
+			return source;
+		}
 		@Override
 		public String toString() {
-			return "TransferForm [fromAccount=" + fromAccount + ", toAccount="
-					+ toAccount + ", currency=" + currency + ", amount="
-					+ amount + "]";
+			return "TransferForm [sourceAccount=" + sourceAccount
+					+ ", targetAccount=" + targetAccount + ", currency="
+					+ currency + ", amount=" + amount + ", source=" + source
+					+ "]";
 		}
 	}
 }
