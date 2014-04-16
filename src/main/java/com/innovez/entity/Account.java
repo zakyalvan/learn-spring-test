@@ -115,6 +115,7 @@ public class Account {
 		@Embedded
 		private Money amount;
 		
+		@Column
 		private boolean increased;
 	}
 }

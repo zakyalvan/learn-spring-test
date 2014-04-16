@@ -24,10 +24,16 @@ public class Money {
 	public String getCurrencyCode() {
 		return currencyCode;
 	}
+	void setCurrencyCode(String currencyCode) {
+		this.currencyCode = currencyCode;
+	}
+	
 	public Double getAmount() {
 		return amount;
 	}
-	
+	void setAmount(Double amount) {
+		this.amount = amount;
+	}
 	public void increaseAmount(Double amountToAdd) {
 		this.amount += amountToAdd;
 	}

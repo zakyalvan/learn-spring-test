@@ -12,6 +12,15 @@ import com.innovez.entity.Money;
  *
  */
 public interface TransferService {
+	/**
+	 * Do transfering money.
+	 * 
+	 * @param fromAccountNumber
+	 * @param toAccountNumber
+	 * @param amount
+	 * @return
+	 * @throws TransferException
+	 */
 	TransferStatus transfer(String fromAccountNumber, String toAccountNumber, Money amount) throws TransferException;
 	
 	/**

@@ -9,13 +9,14 @@
 
 	<security:http use-expressions="true">
 		<security:http-basic />
+		<!-- 
+		Secure all endpoints.
+		 -->
 		<security:intercept-url pattern="/**" access="isAuthenticated()" />
 	</security:http>
 	<security:authentication-manager>
-		<security:authentication-provider>
-			<security:user-service>
-				<security:user name="admin" password="admin" authorities="ROLE_ADMIN"/>
-			</security:user-service>
-		</security:authentication-provider>
+		<security:authentication-provider user-service-ref="userDetailsService" />
 	</security:authentication-manager>
+	
+	<bean name="userDetailsService" class="com.innovez.security.UserDetailsServiceAdapter" />
 </beans>

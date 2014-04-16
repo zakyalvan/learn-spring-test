@@ -16,15 +16,15 @@ import org.hibernate.validator.constraints.Email;
 public class Person implements Serializable {
 	@Id
 	@Email
-	@Column(name="person_email")
+	@Column(name="email")
 	private String email;
 	
 	@NotNull
-	@Column(name="person_name")
+	@Column(name="name")
 	private String name;
 	
 	@NotNull
-	@Column(name="person_password")
+	@Column(name="password")
 	private String password;
 
 	public String getEmail() {

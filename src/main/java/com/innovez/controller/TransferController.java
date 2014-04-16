@@ -1,11 +1,14 @@
 package com.innovez.controller;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.validation.constraints.NotNull;
 
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -14,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import com.innovez.entity.Account;
 import com.innovez.entity.Money;
 import com.innovez.service.TransferException;
 import com.innovez.service.TransferService;
@@ -31,13 +35,30 @@ public class TransferController {
 	
 	private TransferService transferService;
 	
+	/**
+	 * Attach form backing objec or command to model.
+	 * 
+	 * @return
+	 */
 	@ModelAttribute("form")
 	public TransferForm createFormBacking() {
+		logger.debug("Create form.");
 		return new TransferForm();
 	}
 	
+	/**
+	 * List owned account of logged-in user.
+	 * 
+	 * @return
+	 */
+	@ModelAttribute("accounts")
+	public List<Account> listOwnedAccount() {
+		logger.debug("List owned account.");
+		return new ArrayList<Account>();
+	}
+	
 	@RequestMapping(method=RequestMethod.POST)
-	public @ResponseBody TransferStatus processTransform(@ModelAttribute TransferForm form, BindingResult bindingResult) {
+	public @ResponseBody TransferStatus processTransfer(@ModelAttribute TransferForm form, BindingResult bindingResult) {
 		logger.debug("Perform transfer with form/command : " + form);
 		return transferService.transfer(form.getFromAccount(), form.getToAccount(), new Money(form.getCurrency(), form.getAmount()));
 	}
