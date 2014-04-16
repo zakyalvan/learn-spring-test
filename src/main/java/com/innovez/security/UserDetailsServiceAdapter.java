@@ -18,7 +18,7 @@ public class UserDetailsServiceAdapter implements UserDetailsService {
 	
 	@Override
 	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-		if(personRepository.exists(username)) {
+		if(!personRepository.exists(username)) {
 			throw new UsernameNotFoundException(String.format("Username %s not found is user database", username));
 		}
 		

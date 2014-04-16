@@ -7,6 +7,7 @@ import java.util.List;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.util.Assert;
 
 import com.innovez.entity.Person;
 
@@ -21,6 +22,7 @@ public final class UserDetailsAdapter implements UserDetails {
 	private final List<GrantedAuthority> authorities;
 	
 	public UserDetailsAdapter(Person adaptee) {
+		Assert.notNull(adaptee, "Adapted person object should not be null.");
 		person = adaptee;
 		authorities = new ArrayList<GrantedAuthority>();
 		authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
